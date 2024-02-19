@@ -2,6 +2,8 @@
 using Azure.AI.OpenAI;
 using static System.Environment;
 
+bool streaming = true;
+
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
 string endpoint = GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
 string key = GetEnvironmentVariable("AZURE_OPENAI_KEY");
@@ -24,8 +26,21 @@ var chatCompletionsOptions = new ChatCompletionsOptions()
     MaxTokens = 100
 };
 
-Response<ChatCompletions> response = client.GetChatCompletions(chatCompletionsOptions);
+if (streaming)
+{
+    await foreach (StreamingChatCompletionsUpdate response in client.GetChatCompletionsStreaming(chatCompletionsOptions))
+    {
+        // Using WriteLine to show the completions individually
+        Console.WriteLine(response.ContentUpdate);
+    }
+    Console.WriteLine("Streaming completed");
+}
+else
+{
+    Response<ChatCompletions> response = client.GetChatCompletions(chatCompletionsOptions);
 
-Console.WriteLine(response.Value.Choices[0].Message.Content);
+    Console.WriteLine(response.Value.Choices[0].Message.Content);
+}
+
 
 Console.WriteLine();
